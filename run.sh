@@ -87,7 +87,7 @@ Options:
   up                            Start the application
   dn, down                      Stop the application
   logs <service-name>           Get the logs of the specified service
-  be, bnackend                  Connect to 'backend' service (ppen a bash terminal in the container)
+  be, backend                   Connect to 'backend' service (ppen a bash terminal in the container)
   fe, frontend                  Connect to 'front' service (ppen a bash terminal in the container)
   h, help                       Get help
 "
