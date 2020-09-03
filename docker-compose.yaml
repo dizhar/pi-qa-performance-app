@@ -1,0 +1,74 @@
+version: '3.7'
+
+services:
+  # https://stackoverflow.com/questions/39468841/is-it-possible-to-start-a-stopped-container-from-another-container#:~:text=3%20Answers&text=It%20is%20possible%20to%20grant,%2Fvar%2Frun%2Fdocker.
+  
+  # 1st service: backend
+  server:
+    # image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-backend:master
+    image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-backend:dev
+    container_name: backend
+    stdin_open: true
+    # expose: 
+    #  - "3000"
+    ports:
+      - "3000:3000"  # host:container
+    # hostname: server
+    working_dir: /app
+    volumes:
+      # remove this when possible
+      # - ./sitespeed.sh:/app/sitespeed.sh
+
+      - sitespeed-config:/app/config
+      - sitespeed-script:/app/script
+      - sitespeed-result:/app/sitespeed-result
+
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./pi-container-registry.sh:/app/pi-container-registry.sh
+      - logvolume01:/var/log
+
+    environment:
+      # not used yet
+      SHELL_EXEC_SILENT: "false"
+    command:
+      - /bin/bash
+      - -c
+      - | 
+        # docker login to Azure continaer registry
+        ./pi-container-registry.sh login
+
+        cp -r /app/dist/proxy /app/script
+
+        npm run start:prod    
+  
+  # 2nd service: frontend
+  client:
+    # image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-frontend:master
+    image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-frontend:dev
+    container_name: frontend
+    depends_on: 
+      - server
+    stdin_open: true
+    expose:
+      - "4200"
+    ports:
+      - "4200:80"  # host:container
+    environment: 
+      - SERVER_HOSTNAME=server
+    # working_dir: /
+    volumes:
+      - sitespeed-result:/sitespeed-result
+      - logvolume01:/var/log
+  
+# https://stackoverflow.com/questions/40905761/how-do-i-mount-a-host-directory-as-a-volume-in-docker-compose
+volumes:
+  logvolume01: {}
+
+  sitespeed-config: 
+    external: true
+  
+  sitespeed-script: 
+    external: true
+
+  sitespeed-result: 
+    external: true
