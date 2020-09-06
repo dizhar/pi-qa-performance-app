@@ -49,6 +49,11 @@ function delete_volumes() {
 function create_volumes() {
 
     echo ""
+    DIR="data/piqaautomationstorage/sitespeed-result"
+    echo "Create directory '$DIR'"
+    mkdir -p "$DIR"
+
+    echo ""
     echo "Create directory 'config'"
     mkdir -p "config"
 
