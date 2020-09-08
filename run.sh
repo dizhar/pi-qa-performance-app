@@ -12,20 +12,22 @@ DIR_1="${HOME}/data/piqaautomationstorage/sitespeed-result"
 DIR_2="${PWD}/config"
 DIR_3="${PWD}/script"
 
-export HOST_IP=`curl -s https://checkip.amazonaws.com`
-echo "HOST_IP = $HOST_IP"
 
+export HOST_IP=`curl -s https://checkip.amazonaws.com`
 export IMAGE_TAG="dev"
 
 function login(){
     ./pi-container-registry.sh login
     docker pull pageintegrity.azurecr.io/pi-core/pi-qa-performance-backend:${IMAGE_TAG}
     docker pull pageintegrity.azurecr.io/pi-core/pi-qa-performance-frontend:${IMAGE_TAG}
-
 }
 
 function up(){
     login
+
+    echo "HOST_IP   : $HOST_IP"
+    echo "IMAGE_TAG : $IMAGE_TAG"
+
 
     # make sure we use the latest images
     # docker-compose -f docker-compose.yaml pull

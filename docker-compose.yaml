@@ -5,7 +5,6 @@ services:
   
   # 1st service: backend
   server:
-    # image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-backend:master
     image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-backend:${IMAGE_TAG}
     container_name: backend
     stdin_open: true
@@ -47,7 +46,6 @@ services:
   
   # 2nd service: frontend
   client:
-    # image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-frontend:master
     image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-frontend:${IMAGE_TAG}
     container_name: frontend
     depends_on: 
@@ -57,8 +55,10 @@ services:
       - "4200"
     ports:
       - "4200:80"  # host:container
-    environment: 
-      - SERVER_HOSTNAME=server
+    environment:
+      # not used yet
+      - SHELL_EXEC_SILENT="false"
+      - HOST_IP
     # working_dir: /
     volumes:
       - sitespeed-result:/sitespeed-result
