@@ -8,9 +8,27 @@ VOLUME_NAME_1="sitespeed-result"
 VOLUME_NAME_2="sitespeed-config"
 VOLUME_NAME_3="sitespeed-script"
 
+DIR_1="${HOME}/data/piqaautomationstorage/sitespeed-result"
+DIR_2="${PWD}/config"
+DIR_3="${PWD}/script"
+
+export HOST_IP=`curl -s https://checkip.amazonaws.com`
+echo "HOST_IP = $HOST_IP"
+
+export IMAGE_TAG="dev"
+
+function login(){
+    ./pi-container-registry.sh login
+    docker pull pageintegrity.azurecr.io/pi-core/pi-qa-performance-backend:${IMAGE_TAG}
+    docker pull pageintegrity.azurecr.io/pi-core/pi-qa-performance-frontend:${IMAGE_TAG}
+
+}
+
 function up(){
+    login
+
     # make sure we use the latest images
-    docker-compose -f docker-compose.yaml pull
+    # docker-compose -f docker-compose.yaml pull
     # run in 'detach' mode (up -d)
     docker-compose -f docker-compose.yaml up -d 
 }
@@ -46,20 +64,20 @@ function delete_volumes() {
         docker volume rm $VOLUME_NAME_3
     fi
 }
+
+function create_directory(){
+    DIR="$1"
+    if [[ ! -d "$DIR" ]];then
+        echo ""
+        echo "Creating directory '$DIR'"
+        mkdir -p "$DIR"
+    fi
+}
 function create_volumes() {
 
-    echo ""
-    DIR="data/piqaautomationstorage/sitespeed-result"
-    echo "Create directory '$DIR'"
-    mkdir -p "$DIR"
-
-    echo ""
-    echo "Create directory 'config'"
-    mkdir -p "config"
-
-    echo ""
-    echo "Create directory 'script'"
-    mkdir -p "script"
+    create_directory "$DIR_1"
+    create_directory "$DIR_2"
+    create_directory "$DIR_3"
 
     echo ""
     echo "Create volume $VOLUME_NAME_1"
@@ -67,21 +85,21 @@ function create_volumes() {
     # --opt device=./${PWD}/data/piqaautomationstorage/sitespeed-result \
     docker volume create --driver local \
         --opt type=none \
-        --opt device=./${PWD}/data/piqaautomationstorage/sitespeed-result \
+        --opt device=${DIR_1} \
         --opt o=bind $VOLUME_NAME_1
 
     echo ""
     echo "Create volume $VOLUME_NAME_2"
     docker volume create --driver local \
         --opt type=none \
-        --opt device=./${PWD}/config \
+        --opt device=${DIR_2} \
         --opt o=bind $VOLUME_NAME_2
 
     echo ""
     echo "Create volume $VOLUME_NAME_3"
     docker volume create --driver local \
         --opt type=none \
-        --opt device=./${PWD}/script \
+        --opt device=${DIR_3} \
         --opt o=bind $VOLUME_NAME_3
 }
 

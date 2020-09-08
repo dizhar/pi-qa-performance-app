@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.7' 
 
 services:
   # https://stackoverflow.com/questions/39468841/is-it-possible-to-start-a-stopped-container-from-another-container#:~:text=3%20Answers&text=It%20is%20possible%20to%20grant,%2Fvar%2Frun%2Fdocker.
@@ -6,7 +6,7 @@ services:
   # 1st service: backend
   server:
     # image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-backend:master
-    image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-backend:dev
+    image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-backend:${IMAGE_TAG}
     container_name: backend
     stdin_open: true
     # expose: 
@@ -29,7 +29,9 @@ services:
 
     environment:
       # not used yet
-      SHELL_EXEC_SILENT: "false"
+      - SHELL_EXEC_SILENT="false"
+      - HOST_IP
+
     command:
       - /bin/bash
       - -c
@@ -39,12 +41,14 @@ services:
 
         cp -r /app/dist/proxy /app/script
 
+        echo $HOST_IP
+
         npm run start:prod    
   
   # 2nd service: frontend
   client:
     # image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-frontend:master
-    image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-frontend:dev
+    image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-frontend:${IMAGE_TAG}
     container_name: frontend
     depends_on: 
       - server
