@@ -4,14 +4,37 @@ services:
   # https://stackoverflow.com/questions/39468841/is-it-possible-to-start-a-stopped-container-from-another-container#:~:text=3%20Answers&text=It%20is%20possible%20to%20grant,%2Fvar%2Frun%2Fdocker.
   
   # 1st service: backend
-  server:
+  nginx-reverse-proxy:
+      restart: unless-stopped
+      image: staticfloat/nginx-certbot
+      container_name: nginx-reverse-proxy
+      depends_on: 
+        - backend
+        - frontend
+      ports:
+        - 80:80/tcp
+        - 443:443/tcp
+      environment:
+          # CERTBOT_EMAIL: owner@company.com
+          # CERTBOT_EMAIL: tlevifir@akamai.com
+          CERTBOT_EMAIL: admin@chameleonx.com
+          ENVSUBST_VARS: FQDN
+          FQDN: pi-qa-performance.pilayer.net
+      volumes:
+        # - ${PWD}/nginx/conf.d:/etc/nginx/user.conf.d:ro
+        - ${PWD}/nginx:/etc/nginx/user.conf.d:ro
+        - letsencrypt:/etc/letsencrypt
+        - logvolume01:/var/log
+
+  backend:
+    restart: unless-stopped
     image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-backend:${IMAGE_TAG}
     container_name: backend
     stdin_open: true
-    # expose: 
-    #  - "3000"
-    ports:
-      - "3000:3000"  # host:container
+    expose: 
+     - "3000"
+    # ports:
+    #   - "3000:3000"  # host:container
     # hostname: server
     working_dir: /app
     volumes:
@@ -23,46 +46,63 @@ services:
       - sitespeed-result:/app/sitespeed-result
 
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./pi-container-registry.sh:/app/pi-container-registry.sh
+      - ./docker-login.sh:/app/docker-login.sh
       - logvolume01:/var/log
 
     environment:
       # not used yet
       - SHELL_EXEC_SILENT="false"
       - HOST_IP
+      - HOST_ADDRESS
 
     command:
       - /bin/bash
       - -c
       - | 
-        # docker login to Azure continaer registry
-        ./pi-container-registry.sh login
+        ./docker-login.sh
 
         cp -r /app/dist/proxy /app/script
 
-        echo $HOST_IP
+        echo "HOST_IP: $HOST_IP"
+        echo "HOST_ADDRESS: $HOST_ADDRESS"
 
         npm run start:prod    
   
   # 2nd service: frontend
-  client:
+  frontend:
+    restart: unless-stopped
     image: pageintegrity.azurecr.io/pi-core/pi-qa-performance-frontend:${IMAGE_TAG}
     container_name: frontend
     depends_on: 
-      - server
+      - backend
     stdin_open: true
     expose:
       - "4200"
-    ports:
-      - "4200:80"  # host:container
+    # ports:
+      # host:container
+      # - 4200:80   
+      # - 4200:443
+      # - 127.0.0.1:4200:80
+      # - 127.0.0.1:4200:443
+      # - 443:80  
+      # - 80:80/tcp
+      # - 443:443/tcp
+      
     environment:
       # not used yet
       - SHELL_EXEC_SILENT="false"
       - HOST_IP
+      - HOST_ADDRESS
+      # - CERTBOT_EMAIL="tlevifir@akamai.com"
+      # variable names are space-separated
+      # - ENVSUBST_VARS="FQDN"
+      # - FQDN="pi-qa-performance.pilayer.net"
     # working_dir: /
     volumes:
       - sitespeed-result:/sitespeed-result
       - logvolume01:/var/log
+      #- ./conf.d:/etc/nginx/user.conf.d:ro
+      # - letsencrypt:/etc/letsencrypt
   
 # https://stackoverflow.com/questions/40905761/how-do-i-mount-a-host-directory-as-a-volume-in-docker-compose
 volumes:
@@ -76,3 +116,5 @@ volumes:
 
   sitespeed-result: 
     external: true
+
+  letsencrypt:

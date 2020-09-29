@@ -3,21 +3,22 @@ set -e
 
 command=$1
 
+
+export IMAGE_TAG="dev"
+
 NETWORK="qa-performance"
 VOLUME_NAME_1="sitespeed-result"
 VOLUME_NAME_2="sitespeed-config"
 VOLUME_NAME_3="sitespeed-script"
 
-DIR_1="${HOME}/data/piqaautomationstorage/sitespeed-result"
+# DIR_1="${HOME}/data/piqaautomationstorage/performance/sitespeed-result"
+# DIR_1="${HOME}/data/piqaautomationstorage/sitespeed-result"
+DIR_1="${HOME}/sitespeed-result"
 DIR_2="${PWD}/config"
 DIR_3="${PWD}/script"
 
-
-export HOST_IP=`curl -s https://checkip.amazonaws.com`
-export IMAGE_TAG="dev"
-
 function login(){
-    ./pi-container-registry.sh login
+    ./docker-login.sh
     docker pull pageintegrity.azurecr.io/pi-core/pi-qa-performance-backend:${IMAGE_TAG}
     docker pull pageintegrity.azurecr.io/pi-core/pi-qa-performance-frontend:${IMAGE_TAG}
 }
@@ -32,7 +33,7 @@ function up(){
     # make sure we use the latest images
     # docker-compose -f docker-compose.yaml pull
     # run in 'detach' mode (up -d)
-    docker-compose -f docker-compose.yaml up -d 
+    docker-compose -f docker-compose.yaml $VERBOSE up -d 
 }
 function down(){
     docker-compose -f docker-compose.yaml down 
@@ -126,6 +127,18 @@ case $command in
 
             delete_volumes
             create_volumes
+
+            export HOST_IP="$2"
+            [[ "$HOST_IP" != "localhost" ]] && export HOST_IP=`curl -s https://checkip.amazonaws.com`
+
+            # change to https://pi-qa-performance.pilayer.net
+            export HOST_ADDRESS="pi-qa-performance.pilayer.net"
+
+            [[ "$@" == *"--verbose"* ]] && VERBOSE="--verbose"
+            echo ""
+            echo "Running in verbose mode"
+            echo ""
+
             up    
         fi
         echo ""
@@ -142,17 +155,21 @@ case $command in
         echo ""
         echo "Application is down."
         ;;
+    "nginx"|"ng")
+        exec "nginx-reverse-proxy";;
     "backend"|"be")
-        exec "server";;
+        exec "backend";;
     "frontend"|"fe")
-        exec "client";;
+        exec "frontend";;
     "logs" )
         SERVICE_NAME=$2
         case $SERVICE_NAME in
+            "nginx"|"ng")
+                SERVICE_NAME="nginx-reverse-proxy";;
             "backend"|"be")
-                SERVICE_NAME="server";;
+                SERVICE_NAME="backend";;
             "frontend"|"fe")
-                SERVICE_NAME="client";;
+                SERVICE_NAME="frontend";;
         esac
         docker-compose logs --follow $SERVICE_NAME 
     ;;
