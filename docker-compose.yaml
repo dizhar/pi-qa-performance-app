@@ -104,6 +104,34 @@ services:
       #- ./conf.d:/etc/nginx/user.conf.d:ro
       # - letsencrypt:/etc/letsencrypt
   
+  socket-io-nginx:
+    build: ./socket-io-nginx
+    container_name: socket-io-nginx
+    links:
+      - server-john
+      # - server-paul
+      # - server-george
+      # - server-ringo
+    ports:
+    - "3000:80"    
+
+  server-john:
+    build: ./socket-io-server
+    container_name: server-john
+    links:
+      - redis
+    expose:
+      - "3000"
+    environment:
+      - NAME=John
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+  
+  redis:
+    image: redis:alpine
+    expose:
+      - "6379"
+
 # https://stackoverflow.com/questions/40905761/how-do-i-mount-a-host-directory-as-a-volume-in-docker-compose
 volumes:
   logvolume01: {}

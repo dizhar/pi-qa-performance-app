@@ -33,7 +33,7 @@ function up(){
     # make sure we use the latest images
     # docker-compose -f docker-compose.yaml pull
     # run in 'detach' mode (up -d)
-    docker-compose -f docker-compose.yaml $VERBOSE up -d 
+    docker-compose -f docker-compose.yaml $VERBOSE up -d --build
 }
 function down(){
     docker-compose -f docker-compose.yaml down 

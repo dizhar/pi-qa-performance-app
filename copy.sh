@@ -32,7 +32,7 @@ chmod 400 $SSH_PRIVATE_KEY_FILE
 ssh -i $SSH_PRIVATE_KEY_FILE $VM_USERNAME@$VM_IP_ADDRESS "mkdir -p $TARGET_DIRECTORY"
 # ssh -i $SSH_PRIVATE_KEY_FILE $VM_USERNAME@$VM_IP_ADDRESS "mkdir -p $TARGET_DIRECTORY/nginx"
 
-for file_or_folder in "nginx" "docker-compose.yaml" "docker-login.sh" "run.sh"; do
+for file_or_folder in "nginx" "socket-io-nginx" "socket-io-server" "docker-compose.yaml" "docker-login.sh" "run.sh"; do
     echo "Copying $file_or_folder ..."
     scp -i $SSH_PRIVATE_KEY_FILE -r pi-qa-performance-app/${file_or_folder} $VM_USERNAME@$VM_IP_ADDRESS:$TARGET_DIRECTORY
 done
